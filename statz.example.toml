@@ -1,0 +1,61 @@
+# statz configuration — copy to statz.toml and fill in your values.
+# statz.toml is gitignored: it will contain credentials, keep it private.
+
+[app]
+refresh_seconds = 3
+
+[proxmox]
+host = "https://YOUR-PVE-NODE:8006"
+user = "root@pam"
+verify_ssl = false
+# Recommended: a privilege-separated API token with the read-only PVEAuditor role:
+#   pveum user token add root@pam statz --privsep 1
+#   pveum acl modify / --tokens 'root@pam!statz' --roles PVEAuditor
+token_id = "root@pam!statz"
+token_secret = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# ...or password auth instead of a token:
+# password = "..."
+
+[metrics]                        # optional — omit to run Proxmox-only
+# Point at Prometheus / VictoriaMetrics directly:
+prometheus_url = "http://prometheus.example:9090"
+# ...or through Grafana's datasource proxy (create a Viewer service-account token):
+# prometheus_url = "http://grafana.example/grafana/api/datasources/proxy/uid/<ds-uid>"
+# grafana_token = "glsa_..."
+
+# Per-node overlays shown inside each node panel (matched by node name in labels).
+# These use node_exporter RAPL + hwmon; adjust the job label to your scrape config.
+node_power_query = 'sum by (instance) (rate(node_rapl_package_joules_total{job="pve-nodes"}[2m]))'
+node_temp_query = 'max by (instance) (node_hwmon_temp_celsius{job="pve-nodes"} < 120)'
+
+# Each [[metrics.stat]] is one line in the right-hand panel.
+# Fields: label, query (PromQL), unit, precision, max (draws a bar), url (per-stat
+# datasource override — handy when stats live in a second Prometheus/VictoriaMetrics).
+
+[[metrics.stat]]
+label = "cluster pwr"
+query = 'sum(rate(node_rapl_package_joules_total{job="pve-nodes"}[2m]))'
+unit = " W"
+precision = 1
+
+[[metrics.stat]]
+label = "hottest cpu"
+query = 'max(node_hwmon_temp_celsius{job="pve-nodes"} < 120)'
+unit = " °C"
+precision = 0
+max = 95
+
+# UniFi via unpoller, from a second datasource:
+# [[metrics.stat]]
+# label = "poe power"
+# query = "sum(unpoller_device_port_poe_watts)"
+# unit = " W"
+# precision = 1
+# url = "http://grafana.example/grafana/api/datasources/proxy/uid/<other-ds-uid>"
+
+# Classic NUT UPS exporter:
+# [[metrics.stat]]
+# label = "ups battery"
+# query = "min(nut_battery_charge)"
+# unit = " %"
+# max = 100

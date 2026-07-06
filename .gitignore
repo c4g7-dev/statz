@@ -1,0 +1,16 @@
+# real config — contains credentials
+statz.toml
+
+# ops/setup scripts — contain real credentials and homelab internals, never commit
+publish.sh
+deploy.sh
+wg_setup.sh
+font_setup.sh
+pi_diag.sh
+bootstrap.py
+grafana_setup.py
+lighthouse_check.py
+probe.py
+
+.venv/
+__pycache__/
